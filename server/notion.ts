@@ -83,6 +83,23 @@ export async function findCreatorByCode(
   return pageToCreator(res.results[0]);
 }
 
+export async function findCreatorByEmail(
+  email: string,
+): Promise<NotionCreator | null> {
+  requireConfig();
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const res = await notion.databases.query({
+    database_id: DATABASE_ID,
+    filter: { property: EMAIL_PROPERTY, email: { equals: normalized } },
+    page_size: 1,
+  });
+
+  if (!res.results.length) return null;
+  return pageToCreator(res.results[0]);
+}
+
 // Creates the creator's Notion record. CR-Code is auto-assigned by Notion itself
 // (unique_id field) — no code generation or collision handling needed here.
 export async function createCreator(name: string, email: string): Promise<NotionCreator> {
