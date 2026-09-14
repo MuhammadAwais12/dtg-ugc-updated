@@ -1,0 +1,6 @@
+{
+  "name": "Down to Ground — Creator Dashboard",
+  "description": "Full-stack creator and influencer performance dashboard for Down to Ground brand",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

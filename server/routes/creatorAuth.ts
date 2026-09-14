@@ -1,0 +1,54 @@
+import { Router } from "express";
+import { normalizeCreatorCode } from "../../src/utils/creator.js";
+import { findCreatorByCode, findCreatorByEmail, createCreator } from "../notion.js";
+
+const router = Router();
+
+// Login: creator enters their CR-Code, looked up against Notion (source of truth).
+router.post("/login", async (req, res) => {
+  try {
+    const { code } = req.body || {};
+    if (!code || !code.trim()) {
+      return res.status(400).json({ isValid: false, error: "Code is required" });
+    }
+    const normalized = normalizeCreatorCode(code);
+    const creator = await findCreatorByCode(normalized);
+
+    if (!creator) {
+      return res.status(404).json({ isValid: false, error: "Creator code not found" });
+    }
+
+    res.json({ isValid: true, code: creator.code, name: creator.name });
+  } catch (error: any) {
+    console.error("Error during creator login:", error);
+    res.status(500).json({ isValid: false, error: error?.message || "Login failed, please try again" });
+  }
+});
+
+// Signup: new creator provides Name + Email, gets an auto-assigned unique CR-Code
+// and a new record created in Notion.
+router.post("/signup", async (req, res) => {
+  try {
+    const { name, email } = req.body || {};
+    if (!name || !name.trim() || !email || !email.trim()) {
+      return res.status(400).json({ error: "Name and email are required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await findCreatorByEmail(normalizedEmail);
+    if (existing) {
+      return res.status(409).json({
+        error: "This email is already registered. Please log in with your existing CR-Code instead.",
+        code: existing.code,
+      });
+    }
+
+    const creator = await createCreator(name.trim(), normalizedEmail);
+    res.status(201).json({ name: creator.name, email: creator.email, code: creator.code });
+  } catch (error: any) {
+    console.error("Error during creator signup:", error);
+    res.status(500).json({ error: error?.message || "Signup failed, please try again" });
+  }
+});
+
+export default router;
