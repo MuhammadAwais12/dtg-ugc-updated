@@ -14,4 +14,20 @@ const drive = google.drive({
   auth,
 });
 
+export async function testGoogleDriveAccess() {
+  const folderId = process.env.GOOGLE_DRIVE_STAGING_FOLDER_ID;
+
+  if (!folderId) {
+    throw new Error("GOOGLE_DRIVE_STAGING_FOLDER_ID is not configured");
+  }
+
+  const response = await drive.files.get({
+    fileId: folderId,
+    fields: "id,name,mimeType",
+    supportsAllDrives: true
+  });
+
+  return response.data;
+}
+
 export { auth, drive };
