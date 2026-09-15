@@ -1,27 +1,45 @@
 import { Router } from "express";
-import { normalizeCreatorCode } from "../../src/utils/creator.js";
-import { findCreatorByCode, findCreatorByEmail, createCreator } from "../notion.js";
+import {
+  authenticateCreator,
+  findCreatorByEmail,
+  createCreator
+} from "../notion.js";
 
 const router = Router();
 
-// Login: creator enters their CR-Code, looked up against Notion (source of truth).
 router.post("/login", async (req, res) => {
   try {
-    const { code } = req.body || {};
-    if (!code || !code.trim()) {
-      return res.status(400).json({ isValid: false, error: "Code is required" });
+    const { name, code } = req.body || {};
+
+    if (!name || !name.trim() || !code || !code.trim()) {
+      return res.status(400).json({
+        isValid: false,
+        error: "Name and Code are required"
+      });
     }
-    const normalized = normalizeCreatorCode(code);
-    const creator = await findCreatorByCode(normalized);
+
+    const creator = await authenticateCreator(code.trim(), name.trim());
 
     if (!creator) {
-      return res.status(404).json({ isValid: false, error: "Creator code not found" });
+      return res.status(401).json({
+        isValid: false,
+        error: "Invalid name or code"
+      });
     }
 
-    res.json({ isValid: true, code: creator.code, name: creator.name });
+    return res.json({
+      isValid: true,
+      code: creator.code,
+      name: creator.name,
+      email: creator.email
+    });
   } catch (error: any) {
     console.error("Error during creator login:", error);
-    res.status(500).json({ isValid: false, error: error?.message || "Login failed, please try again" });
+
+    return res.status(500).json({
+      isValid: false,
+      error: error?.message || "Login failed, please try again"
+    });
   }
 });
 

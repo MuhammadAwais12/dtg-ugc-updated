@@ -82,6 +82,22 @@ export async function findCreatorByCode(
   if (!res.results.length) return null;
   return pageToCreator(res.results[0]);
 }
+export async function authenticateCreator(
+  code: string,
+  name: string
+): Promise<NotionCreator | null> {
+  requireConfig();
+  const creator = await findCreatorByCode(code);
+  if (!creator) {
+    return null;
+  }
+  const normalizedStoredName = creator.name.trim().toLocaleLowerCase();
+  const normalizedEnteredName = name.trim().toLocaleLowerCase();
+  if (normalizedStoredName !== normalizedEnteredName) {
+    return null;
+  }
+  return creator;
+}
 
 export async function findCreatorByEmail(
   email: string,

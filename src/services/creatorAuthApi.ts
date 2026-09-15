@@ -1,15 +1,33 @@
-export async function loginWithCreatorCode(
+export async function loginCreator(
+  name: string,
   code: string
-): Promise<{ isValid: boolean; code?: string; name?: string; error?: string }> {
+): Promise<{
+  isValid: boolean;
+  code?: string;
+  name?: string;
+  email?: string;
+  error?: string;
+}> {
   const res = await fetch("/api/creator-auth/login", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name,
+      code
+    })
   });
+
   const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    return { isValid: false, error: data?.error || "Login failed" };
+    return {
+      isValid: false,
+      error: data?.error || "Login failed"
+    };
   }
+
   return data;
 }
 
@@ -20,7 +38,7 @@ export async function signupCreator(
   const res = await fetch("/api/creator-auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, email }),
+    body: JSON.stringify({ name, email })
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

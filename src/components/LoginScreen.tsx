@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { LayoutGrid, LogIn, AlertCircle, ShieldCheck } from "lucide-react";
 import { CreatorUser } from "../types";
-import { loginWithCreatorCode } from "../services/creatorAuthApi";
+import { loginCreator } from "../services/creatorAuthApi";
 
 interface LoginScreenProps {
   onLoginSuccess: (user: CreatorUser) => void;
@@ -20,22 +20,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
     const rawName = name.trim();
     const rawCode = code.trim();
-    if (!rawName || !rawCode) return;
+
+    if (!rawName || !rawCode) {
+      setErrorMessage("Name and creator code are required.");
+      return;
+    }
 
     setIsSubmitting(true);
+
     try {
-      const result = await loginWithCreatorCode(rawCode);
+      // Send BOTH name and code to the backend
+      const result = await loginCreator(rawName, rawCode);
 
       if (!result.isValid || !result.code) {
         setErrorMessage(
-          "Invalid creator code. Please check your code or sign up if you're a new creator."
+          result.error ||
+            "Invalid name or creator code. Please check your details."
         );
-        setIsSubmitting(false);
         return;
       }
 
-      const user: CreatorUser = { name: rawName, code: result.code };
+      // Use the creator information returned from Notion/backend
+      const user: CreatorUser = {
+        name: result.name || rawName,
+        code: result.code
+      };
+
       localStorage.setItem("influencer_user", JSON.stringify(user));
+
       onLoginSuccess(user);
     } catch (err) {
       console.error("Login submission error:", err);
@@ -59,16 +71,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
             Influencer Portal
           </h1>
+
           <p className="text-sm text-zinc-400 font-normal">
-            Enter your name and creator code to access your performance dashboard
+            Enter your name and creator code to access your performance
+            dashboard
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+          {/* Name */}
           <div>
             <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
               FULL NAME
             </label>
+
             <input
               type="text"
               required
@@ -79,10 +95,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
+          {/* Creator Code */}
           <div>
             <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
               CREATOR CODE
             </label>
+
             <input
               type="text"
               required
@@ -93,6 +111,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             />
           </div>
 
+          {/* Error */}
           {errorMessage && (
             <div className="p-3.5 bg-red-950/40 border border-red-500/30 rounded-xl flex items-start gap-3 text-red-400 text-xs leading-relaxed animate-in fade-in slide-in-from-top-1">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -100,6 +119,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
+          {/* Login Button */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -110,15 +130,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
 
+        {/* Signup */}
         <div className="mt-6 text-center relative z-10">
           <p className="text-xs text-zinc-500">
             New creator?{" "}
-            <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium">
+            <Link
+              to="/signup"
+              className="text-indigo-400 hover:text-indigo-300 font-medium"
+            >
               Sign up
             </Link>
           </p>
         </div>
 
+        {/* Admin */}
         <div className="mt-4 text-center relative z-10">
           <Link
             to="/admin"
